@@ -1,8 +1,13 @@
-import bcrypt from "bcryptjs";
-import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { getAuthCookieOptions, AUTH_COOKIE_NAME, signAuthToken } from "@/lib/auth";
+import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { NextRequest, NextResponse } from "next/server";
+
+import {
+  getAuthCookieOptions,
+  AUTH_COOKIE_NAME,
+  signAuthToken,
+} from "@/lib/auth";
 
 export const runtime = "nodejs";
 
@@ -16,7 +21,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const parsed = loginSchema.safeParse(body);
 
   if (!parsed.success) {
-    return NextResponse.json({ error: "Datos de login invalidos." }, { status: 400 });
+    return NextResponse.json(
+      { error: "Datos de login invalidos." },
+      { status: 400 },
+    );
   }
 
   const user = await prisma.user.findUnique({
@@ -24,13 +32,22 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   });
 
   if (!user) {
-    return NextResponse.json({ error: "Credenciales invalidas." }, { status: 401 });
+    return NextResponse.json(
+      { error: "Credenciales invalidas." },
+      { status: 401 },
+    );
   }
 
-  const isValidPassword = await bcrypt.compare(parsed.data.password, user.password);
+  const isValidPassword = await bcrypt.compare(
+    parsed.data.password,
+    user.password,
+  );
 
   if (!isValidPassword) {
-    return NextResponse.json({ error: "Credenciales invalidas." }, { status: 401 });
+    return NextResponse.json(
+      { error: "Credenciales invalidas." },
+      { status: 401 },
+    );
   }
 
   const token = signAuthToken({

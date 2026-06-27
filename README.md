@@ -1,34 +1,39 @@
 # DevPanel
 
-Mini panel de administracion construido con Next.js App Router, TypeScript, Tailwind CSS, shadcn/ui, Prisma y Neon PostgreSQL. Usa JWT firmado con `jsonwebtoken` en cookie HttpOnly para sesion.
+DevPanel es un mini panel de administracion construido con Next.js 14+ App Router, Prisma, Neon DB, Tailwind CSS, shadcn/ui y JWT en cookies HttpOnly.
 
 ## Prerrequisitos
 
-- Node.js 20.19+ recomendado.
-- npm 10+.
-- Acceso a la base Neon configurada en `DATABASE_URL`.
+- Node 18+.
+- npm.
+- Acceso a la base Neon usada por `DATABASE_URL`.
 
 ## Instalacion y ejecucion
 
 ```bash
+git clone <URL_DEL_REPO>
+cd dev-panel
 npm install
+```
+
+Crea un archivo `.env` en la raiz del proyecto:
+
+```bash
+DATABASE_URL="postgresql://neondb_owner:npg_ZnGvS3LrdUH0@ep-lucky-block-at5w2ad5-pooler.c-9.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+JWT_SECRET="devpanel_secret_key_2024"
+NEXTAUTH_URL="http://localhost:3000"
+```
+
+Luego ejecuta:
+
+```bash
 npx prisma generate
-npx prisma migrate dev --name init
+npx prisma migrate deploy
 npx prisma db seed
 npm run dev
 ```
 
 Abre `http://localhost:3000`.
-
-## Variables de entorno
-
-Copia `.env.example` a `.env` y completa los valores:
-
-```bash
-DATABASE_URL=""
-JWT_SECRET=""
-NEXTAUTH_URL=""
-```
 
 ## Credenciales de prueba
 
@@ -37,15 +42,14 @@ NEXTAUTH_URL=""
 
 ## Decisiones tecnicas clave
 
-- Next.js 16 con App Router, manteniendo compatibilidad con el requisito Next.js 14+.
-- Rutas protegidas bajo `app/(protected)/` y login bajo `app/(auth)/`.
-- Next.js 16 renombro `middleware.ts` a `proxy.ts`; DevPanel usa `proxy.ts` porque corre en runtime Node.js por defecto y permite verificar JWT con `jsonwebtoken`.
-- Prisma usa `select` en endpoints publicos internos para no retornar `password`.
-- Auth cliente centralizada en `AuthProvider`, con manejo de 401 y redireccion a `/login`.
-- shadcn/ui es la base visual: Card, Table, Input, Button, Badge, Avatar, DropdownMenu, Skeleton, Sonner, Dialog, Sheet, Separator, Select y Empty.
+- Next.js App Router separa paginas publicas, paginas protegidas y API routes dentro del mismo proyecto.
+- Prisma + Neon DB entregan PostgreSQL serverless con queries tipadas y migraciones versionadas.
+- shadcn/ui + Tailwind CSS permiten una interfaz consistente sin crear primitivas visuales desde cero.
+- JWT en cookie HttpOnly evita guardar el token en `localStorage` y permite proteger rutas desde `proxy.ts`.
 
 ## Limitaciones conocidas
 
-- La CLI local mostro warnings porque algunas dependencias recomiendan Node.js 20.19+ y el entorno actual usa Node.js 20.15.0.
-- Prisma 6.19 avisa que `package.json#prisma` estara deprecado en Prisma 7; se mantuvo porque fue parte del requerimiento.
-- No hay CRUD de usuarios; el alcance implementado cubre login, sesion, metricas, busqueda, filtros y paginacion.
+- No hay CRUD completo de usuarios; solo listado, busqueda, filtros, paginacion y metricas.
+- No hay tests E2E automatizados; la verificacion actual cubre unit/smoke tests, TypeScript, lint y build.
+- No hay recuperacion de contrasena ni rotacion de secretos JWT.
+- No hay roles diferenciados en la UI; todos los usuarios autenticados pueden ver dashboard y tabla.
