@@ -1,36 +1,51 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# DevPanel
 
-## Getting Started
+Mini panel de administracion construido con Next.js App Router, TypeScript, Tailwind CSS, shadcn/ui, Prisma y Neon PostgreSQL. Usa JWT firmado con `jsonwebtoken` en cookie HttpOnly para sesion.
 
-First, run the development server:
+## Prerrequisitos
+
+- Node.js 20.19+ recomendado.
+- npm 10+.
+- Acceso a la base Neon configurada en `DATABASE_URL`.
+
+## Instalacion y ejecucion
 
 ```bash
+npm install
+npx prisma generate
+npx prisma migrate dev --name init
+npx prisma db seed
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abre `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Variables de entorno
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Copia `.env.example` a `.env` y completa los valores:
 
-## Learn More
+```bash
+DATABASE_URL=""
+JWT_SECRET=""
+NEXTAUTH_URL=""
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Credenciales de prueba
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- Email: `admin@devpanel.com`
+- Contrasena: `admin123`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Decisiones tecnicas clave
 
-## Deploy on Vercel
+- Next.js 16 con App Router, manteniendo compatibilidad con el requisito Next.js 14+.
+- Rutas protegidas bajo `app/(protected)/` y login bajo `app/(auth)/`.
+- Next.js 16 renombro `middleware.ts` a `proxy.ts`; DevPanel usa `proxy.ts` porque corre en runtime Node.js por defecto y permite verificar JWT con `jsonwebtoken`.
+- Prisma usa `select` en endpoints publicos internos para no retornar `password`.
+- Auth cliente centralizada en `AuthProvider`, con manejo de 401 y redireccion a `/login`.
+- shadcn/ui es la base visual: Card, Table, Input, Button, Badge, Avatar, DropdownMenu, Skeleton, Sonner, Dialog, Sheet, Separator, Select y Empty.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Limitaciones conocidas
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- La CLI local mostro warnings porque algunas dependencias recomiendan Node.js 20.19+ y el entorno actual usa Node.js 20.15.0.
+- Prisma 6.19 avisa que `package.json#prisma` estara deprecado en Prisma 7; se mantuvo porque fue parte del requerimiento.
+- No hay CRUD de usuarios; el alcance implementado cubre login, sesion, metricas, busqueda, filtros y paginacion.
