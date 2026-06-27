@@ -1,8 +1,8 @@
 "use client";
 
+import { useUsers } from "@/hooks/use-users";
 import { UsersTable } from "@/components/users/users-table";
 import { UsersToolbar } from "@/components/users/users-toolbar";
-import { useUsers } from "@/hooks/use-users";
 
 export default function UsersPage() {
   const usersState = useUsers();

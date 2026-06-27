@@ -35,8 +35,8 @@ const bullets = [
 export function LoginSplitPanel() {
   const router = useRouter();
   const { user, isLoading, login } = useAuth();
-  const [email, setEmail] = useState("admin@devpanel.com");
-  const [password, setPassword] = useState("admin123");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -183,12 +183,12 @@ export function LoginSplitPanel() {
                 <Button
                   type="submit"
                   disabled={isSubmitting}
-                  className="h-11 w-full rounded-xl bg-primary text-white hover:bg-(--color-brand-dark)"
+                  className="h-11 w-full rounded-xl bg-primary text-white hover:bg-[var(--color-brand-dark)]"
                 >
                   {isSubmitting ? (
                     <Spinner variant="bars" data-icon="inline-start" />
                   ) : null}
-                  {isSubmitting ? "Accediendo..." : "Acceder"}
+                  {isSubmitting ? "Accediendo..." : "Acceder ->"}
                 </Button>
               </form>
             )}

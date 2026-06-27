@@ -1,29 +1,33 @@
 # DevPanel Agent Context
 
-DevPanel is a single Next.js App Router project for a mini admin panel.
+Consulta `AGENTS.md` y la carpeta `.ai/` antes de modificar el proyecto.
 
-## Stack
+## Resumen rapido
 
-- Next.js 16+ App Router with TypeScript strict mode.
-- Tailwind CSS v4 and shadcn/ui with a dark zinc theme by default.
-- Prisma + Neon PostgreSQL.
-- JWT sessions signed with `jsonwebtoken` and stored in an HttpOnly `token` cookie.
-- Zod for API validation.
+- Proyecto: DevPanel
+- Tipo: mini panel administrativo con login, dashboard y directorio de usuarios
+- Stack: Next.js 16, TypeScript, Tailwind v4, shadcn/ui, Prisma, Neon PostgreSQL, JWT, Zod, nuqs, Sonner
 
-## Architecture
+## Rutas y estructura real
 
-- Public auth routes: `app/(auth)/`.
-- Protected pages: `app/(protected)/`.
-- API routes: `app/api/`.
-- Route protection: `proxy.ts` in the project root. Next.js 16 renamed `middleware.ts` to `proxy.ts`.
-- Shared Prisma client: `lib/prisma.ts`.
-- Shared JWT helpers: `lib/auth.ts`.
-- Client auth state: `components/providers/auth-provider.tsx`.
+- Publico: `src/app/(auth)/login`
+- Protegido: `src/app/(protected)/dashboard`
+- APIs: `src/app/api`
+- Layout raiz: `src/app/layout.tsx`
+- Layout protegido: `src/components/layout/protected-layout.tsx`
+- Proteccion de rutas: `proxy.ts`
 
-## Quality Rules
+## Puntos criticos
 
-- Keep API errors shaped as `{ error: string }`.
-- Never return `password` from API responses.
-- Prefer shadcn/ui components before custom UI.
-- Keep credentials in environment variables only.
-- Run `npm run lint`, `npm run test`, `npx tsc --noEmit`, and `npm run build` before final handoff.
+- Auth cliente: `src/components/providers/auth-provider.tsx`
+- JWT y cookies: `src/lib/auth.ts`
+- Usuarios: `src/hooks/use-users.ts`, `src/app/api/users/route.ts`
+- Dashboard: `src/hooks/use-dashboard.ts`, `src/app/api/stats/route.ts`
+- Tokens visuales: `src/app/globals.css`
+
+## Reglas de calidad
+
+- Mantener errores de API como `{ error: string }`.
+- No retornar `password`.
+- No introducir datos mock fuera de Prisma/seed.
+- Validar con `npm run lint`, `npx tsc --noEmit` y `npm run build`.

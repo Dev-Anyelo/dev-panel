@@ -11,7 +11,7 @@ DevPanel es un mini panel de administracion construido con Next.js 14+ App Route
 ## Instalacion y ejecucion
 
 ```bash
-git clone <URL_DEL_REPO>
+git clone https://github.com/Dev-Anyelo/devpanel-anyelo.git
 cd dev-panel
 npm install
 ```
@@ -53,3 +53,8 @@ Abre `http://localhost:3000`.
 - No hay tests E2E automatizados; la verificacion actual cubre unit/smoke tests, TypeScript, lint y build.
 - No hay recuperacion de contrasena ni rotacion de secretos JWT.
 - No hay roles diferenciados en la UI; todos los usuarios autenticados pueden ver dashboard y tabla.
+
+## Contexto para agentes y handoff
+
+- Punto de entrada rapido: `AGENTS.md`
+- Documentacion interna para IA y nuevos devs: carpeta `.ai/`
