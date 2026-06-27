@@ -5,7 +5,7 @@ import { Slot } from "radix-ui"
 import { cn } from "@/lib/utils"
 
 const badgeVariants = cva(
-  "group/badge inline-flex h-5 w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-4xl border border-transparent px-2 py-0.5 text-xs font-medium whitespace-nowrap transition-colors duration-150 focus-visible:border-[var(--brand)] focus-visible:ring-2 focus-visible:ring-[var(--brand)] has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none [&>svg]:size-3!",
+  "group/badge inline-flex h-5 w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-4xl border border-transparent px-2 py-0.5 text-xs font-medium whitespace-nowrap transition-colors duration-150 focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none [&>svg]:size-3!",
   {
     variants: {
       variant: {
@@ -19,13 +19,12 @@ const badgeVariants = cva(
         ghost:
           "hover:bg-muted hover:text-muted-foreground dark:hover:bg-muted/50",
         link: "text-primary underline-offset-4 hover:underline",
-        brand: "bg-[var(--brand)] text-[#08110d]",
-        info: "bg-[var(--info)] text-white",
-        success: "bg-[var(--success)] text-[#08110d]",
-        warning: "bg-[var(--warning)] text-[#11181c]",
-        danger: "bg-[var(--danger)] text-white",
-        neutral:
-          "border-[var(--surface-border)] bg-[var(--surface-elevated)] text-foreground",
+        brand: "border-primary/25 bg-primary/15 text-primary",
+        info: "border-info/25 bg-info/15 text-info",
+        success: "border-success/25 bg-success/15 text-success",
+        warning: "border-warning/25 bg-warning/15 text-warning",
+        danger: "border-danger/25 bg-danger/15 text-danger",
+        neutral: "border-border bg-muted text-muted-foreground",
       },
     },
     defaultVariants: {

@@ -3,7 +3,9 @@
 import type { Role, Status } from "@prisma/client";
 import { Clipboard, MoreHorizontal, Search, UserRound, Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { parseAsInteger, parseAsString, useQueryState } from "nuqs";
 import { toast } from "sonner";
+import { useAuth } from "@/components/providers/auth-provider";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -65,8 +67,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useAuth } from "@/components/providers/auth-provider";
-import { useDebounce } from "@/hooks/use-debounce";
 import type { UserRow, UsersResponse } from "@/types/dashboard";
 
 const roleOptions = ["ADMIN", "USER", "MODERATOR"] as const satisfies Role[];
@@ -82,10 +82,7 @@ const roleBadgeVariant: Record<Role, "brand" | "info" | "neutral"> = {
   USER: "neutral",
 };
 
-const statusBadgeVariant: Record<
-  Status,
-  "success" | "warning" | "danger"
-> = {
+const statusBadgeVariant: Record<Status, "success" | "warning" | "danger"> = {
   ACTIVE: "success",
   INACTIVE: "warning",
   SUSPENDED: "danger",
@@ -158,7 +155,7 @@ function UserDetailSheet({
 
   return (
     <Sheet open={Boolean(user)} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full border-[var(--surface-border)] bg-[var(--surface-card)] sm:max-w-md">
+      <SheetContent className="w-full border-border bg-card sm:max-w-md">
         {user ? (
           <>
             <SheetHeader>
@@ -168,10 +165,10 @@ function UserDetailSheet({
               </SheetDescription>
             </SheetHeader>
 
-            <div className="mt-6 flex flex-col gap-6">
+            <div className="flex flex-col gap-6 px-4">
               <div className="flex items-center gap-4">
-                <Avatar className="size-16 border border-[var(--surface-border)]">
-                  <AvatarFallback className="bg-[var(--brand)] font-display text-xl font-semibold text-[#08110d]">
+                <Avatar className="size-16 border border-border">
+                  <AvatarFallback className="bg-primary/20 font-display text-xl font-semibold text-primary">
                     {getInitials(user.name)}
                   </AvatarFallback>
                 </Avatar>
@@ -192,17 +189,19 @@ function UserDetailSheet({
                 </Badge>
               </div>
 
-              <div className="grid gap-4 rounded-xl border border-[var(--surface-border)] bg-[var(--surface-elevated)] p-4">
+              <div className="grid gap-4 rounded-xl border border-border bg-muted/50 p-4 shadow-card">
                 <div>
                   <p className="text-xs text-muted-foreground">
                     Fecha de registro
                   </p>
-                  <p className="font-mono text-sm">{formatDate(user.createdAt)}</p>
+                  <p className="font-mono text-sm text-muted-foreground">
+                    {formatDate(user.createdAt)}
+                  </p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">ID de usuario</p>
                   <div className="mt-2 flex items-center gap-2">
-                    <code className="min-w-0 flex-1 truncate rounded-lg border border-[var(--surface-border)] bg-[var(--surface-card)] px-3 py-2 font-mono text-xs">
+                    <code className="min-w-0 flex-1 truncate rounded-lg border border-border bg-card px-3 py-2 font-mono text-xs text-foreground">
                       {user.id}
                     </code>
                     <Tooltip>
@@ -233,16 +232,30 @@ function UserDetailSheet({
 
 export default function UsersPage() {
   const { handleUnauthorized } = useAuth();
-  const [search, setSearch] = useState("");
-  const [role, setRole] = useState<Role | "ALL">("ALL");
-  const [status, setStatus] = useState<Status | "ALL">("ALL");
-  const [page, setPage] = useState(1);
+  const [search, setSearch] = useQueryState(
+    "q",
+    parseAsString.withDefault("").withOptions({
+      shallow: false,
+      throttleMs: 300,
+    }),
+  );
+  const [role, setRole] = useQueryState(
+    "role",
+    parseAsString.withDefault("ALL").withOptions({ shallow: false }),
+  );
+  const [status, setStatus] = useQueryState(
+    "status",
+    parseAsString.withDefault("ALL").withOptions({ shallow: false }),
+  );
+  const [page, setPage] = useQueryState(
+    "page",
+    parseAsInteger.withDefault(1).withOptions({ shallow: false }),
+  );
   const [data, setData] = useState<UsersResponse | null>(null);
   const [selectedUser, setSelectedUser] = useState<UserRow | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const debouncedSearch = useDebounce(search, 300);
 
-  const hasFilters = Boolean(search.trim()) || role !== "ALL" || status !== "ALL";
+  const hasActiveFilters = search !== "" || role !== "ALL" || status !== "ALL";
 
   const queryString = useMemo(() => {
     const params = new URLSearchParams({
@@ -250,8 +263,8 @@ export default function UsersPage() {
       limit: "10",
     });
 
-    if (debouncedSearch.trim()) {
-      params.set("search", debouncedSearch.trim());
+    if (search.trim()) {
+      params.set("search", search.trim());
     }
 
     if (role !== "ALL") {
@@ -263,7 +276,7 @@ export default function UsersPage() {
     }
 
     return params.toString();
-  }, [debouncedSearch, page, role, status]);
+  }, [page, role, search, status]);
 
   useEffect(() => {
     let isMounted = true;
@@ -290,6 +303,9 @@ export default function UsersPage() {
 
         if (isMounted) {
           setData(nextData);
+          if (nextData.totalPages > 0 && page > nextData.totalPages) {
+            void setPage(nextData.totalPages === 1 ? null : nextData.totalPages);
+          }
         }
       } catch {
         toast.error("Error de conexion. Intenta de nuevo");
@@ -305,26 +321,42 @@ export default function UsersPage() {
     return () => {
       isMounted = false;
     };
-  }, [handleUnauthorized, queryString]);
+  }, [handleUnauthorized, page, queryString, setPage]);
 
   const users = data?.users ?? [];
   const totalPages = data?.totalPages ?? 1;
   const total = data?.total ?? 0;
-  const rangeStart = total === 0 ? 0 : (page - 1) * 10 + 1;
-  const rangeEnd = Math.min(page * 10, total);
+  const currentPage = Math.min(page, totalPages);
+  const rangeStart = total === 0 ? 0 : (currentPage - 1) * 10 + 1;
+  const rangeEnd = total === 0 ? 0 : Math.min(currentPage * 10, total);
   const isInitialLoading = isLoading && !data;
 
+  function handleSearchChange(value: string): void {
+    void setSearch(value);
+    void setPage(1);
+  }
+
+  function handleRoleChange(value: string): void {
+    void setRole(value);
+    void setPage(1);
+  }
+
+  function handleStatusChange(value: string): void {
+    void setStatus(value);
+    void setPage(1);
+  }
+
   function clearFilters(): void {
-    setSearch("");
-    setRole("ALL");
-    setStatus("ALL");
-    setPage(1);
+    void setSearch(null);
+    void setRole(null);
+    void setStatus(null);
+    void setPage(null);
   }
 
   return (
     <section className="flex flex-col gap-6">
       <div className="flex flex-col gap-1">
-        <h2 className="font-display text-2xl font-semibold tracking-normal">
+        <h2 className="font-display text-2xl font-semibold tracking-tight">
           Usuarios
         </h2>
         <p className="text-sm text-muted-foreground">
@@ -332,111 +364,107 @@ export default function UsersPage() {
         </p>
       </div>
 
-      <Card className="border-[var(--surface-border)] bg-[var(--surface-card)]">
+      <Card className="section-container shadow-card">
         <CardHeader>
           <CardTitle className="font-display">Directorio</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-6">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
-            <div className="relative flex-1">
-              <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <div className="toolbar">
+            <div className="relative min-w-0 flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={search}
-                onChange={(event) => {
-                  setSearch(event.target.value);
-                  setPage(1);
-                }}
+                onChange={(event) => handleSearchChange(event.target.value)}
                 placeholder="Buscar por nombre o email"
                 className="pl-9"
               />
             </div>
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <Select
-                value={role}
-                onValueChange={(value) => {
-                  setRole(value as Role | "ALL");
-                  setPage(1);
-                }}
-              >
-                <SelectTrigger className="w-full bg-[var(--surface-input)] sm:w-44">
-                  <SelectValue placeholder="Rol" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectItem value="ALL">Todos los roles</SelectItem>
-                    {roleOptions.map((option) => (
-                      <SelectItem key={option} value={option}>
-                        {option}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
+            <Select value={role} onValueChange={handleRoleChange}>
+              <SelectTrigger className="w-full sm:w-44">
+                <SelectValue placeholder="Rol" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectItem value="ALL">Todos los roles</SelectItem>
+                  {roleOptions.map((option) => (
+                    <SelectItem key={option} value={option}>
+                      {option}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
 
-              <Select
-                value={status}
-                onValueChange={(value) => {
-                  setStatus(value as Status | "ALL");
-                  setPage(1);
-                }}
-              >
-                <SelectTrigger className="w-full bg-[var(--surface-input)] sm:w-48">
-                  <SelectValue placeholder="Estado" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectItem value="ALL">Todos los estados</SelectItem>
-                    {statusOptions.map((option) => (
-                      <SelectItem key={option} value={option}>
-                        {option}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
+            <Select value={status} onValueChange={handleStatusChange}>
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue placeholder="Estado" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectItem value="ALL">Todos los estados</SelectItem>
+                  {statusOptions.map((option) => (
+                    <SelectItem key={option} value={option}>
+                      {option}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
 
-              {hasFilters ? (
-                <Button variant="outline" onClick={clearFilters}>
-                  Limpiar filtros
-                </Button>
-              ) : null}
-            </div>
+            {hasActiveFilters ? (
+              <Button variant="outline" onClick={clearFilters}>
+                Limpiar filtros
+              </Button>
+            ) : null}
           </div>
 
           {isInitialLoading ? (
-            <div className="flex min-h-72 items-center justify-center rounded-xl border border-[var(--surface-border)] bg-[var(--surface-elevated)]">
+            <div className="flex min-h-72 items-center justify-center rounded-xl border border-border bg-muted/50">
               <Spinner
                 variant="bars"
-                className="text-[var(--brand)]"
+                className="text-primary"
                 aria-label="Cargando usuarios"
               />
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-xl border border-[var(--surface-border)]">
-              <Table className="min-w-[760px]">
+            <div className="rounded-xl border border-border bg-card shadow-card">
+              <Table className="min-w-[760px] bg-card">
                 <TableHeader>
-                  <TableRow className="bg-[var(--surface-elevated)]">
-                    <TableHead>Usuario</TableHead>
-                    <TableHead>Rol</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead>Fecha de registro</TableHead>
-                    <TableHead className="w-12 text-right">Acciones</TableHead>
+                  <TableRow className="bg-muted/50 hover:bg-muted/50">
+                    <TableHead className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                      Usuario
+                    </TableHead>
+                    <TableHead className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                      Rol
+                    </TableHead>
+                    <TableHead className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                      Estado
+                    </TableHead>
+                    <TableHead className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                      Fecha de registro
+                    </TableHead>
+                    <TableHead className="w-12 text-right text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                      Acciones
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {isLoading ? <UsersTableSkeleton /> : null}
                   {!isLoading && users.length > 0
                     ? users.map((user) => (
-                        <TableRow key={user.id}>
+                        <TableRow
+                          key={user.id}
+                          className="hover:bg-muted/30 transition-colors duration-150"
+                        >
                           <TableCell>
                             <div className="flex min-w-64 items-center gap-3">
-                              <Avatar className="size-10 border border-[var(--surface-border)]">
-                                <AvatarFallback className="bg-[var(--brand)] font-display text-[#08110d]">
+                              <Avatar className="size-10 border border-border">
+                                <AvatarFallback className="bg-primary/20 font-display text-primary">
                                   {getInitials(user.name)}
                                 </AvatarFallback>
                               </Avatar>
                               <div className="flex min-w-0 flex-col">
-                                <span className="truncate font-medium">
+                                <span className="truncate font-medium text-foreground">
                                   {user.name}
                                 </span>
                                 <span className="truncate text-sm text-muted-foreground">
@@ -491,7 +519,7 @@ export default function UsersPage() {
           )}
 
           {!isLoading && users.length === 0 ? (
-            <Empty className="border border-[var(--surface-border)] bg-[var(--surface-elevated)]">
+            <Empty className="border border-border bg-muted/50">
               <EmptyHeader>
                 <EmptyMedia variant="icon">
                   <Users />
@@ -507,7 +535,7 @@ export default function UsersPage() {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-sm text-muted-foreground">
               <p>
-                Pagina {data?.page ?? page} de {totalPages}
+                Pagina {currentPage} de {totalPages}
               </p>
               <p>
                 {rangeStart}-{rangeEnd} de {total} usuarios
@@ -523,7 +551,7 @@ export default function UsersPage() {
                     onClick={(event) => {
                       event.preventDefault();
                       if (!isLoading && page > 1) {
-                        setPage((currentPage) => currentPage - 1);
+                        void setPage(page - 1);
                       }
                     }}
                     className={page <= 1 ? "pointer-events-none opacity-50" : ""}
@@ -537,7 +565,7 @@ export default function UsersPage() {
                     onClick={(event) => {
                       event.preventDefault();
                       if (!isLoading && page < totalPages) {
-                        setPage((currentPage) => currentPage + 1);
+                        void setPage(page + 1);
                       }
                     }}
                     className={

@@ -149,24 +149,21 @@ export default function DashboardPage() {
           const value = stats?.[card.key] ?? 0;
 
           return (
-            <Card
-              key={card.key}
-              className="border-[var(--surface-border)] bg-[var(--surface-card)]"
-            >
+            <Card key={card.key} className="stat-card shadow-card animate-fade-up">
               <CardHeader>
                 <CardTitle className="font-sans text-sm text-muted-foreground">
                   {card.label}
                 </CardTitle>
                 <CardDescription>{card.description}</CardDescription>
-                <CardAction className="rounded-xl border border-[color-mix(in_srgb,var(--brand)_30%,transparent)] bg-[color-mix(in_srgb,var(--brand)_12%,transparent)] p-2 text-[var(--brand)]">
-                  <Icon />
+                <CardAction className="rounded-xl border border-primary/20 bg-primary/10 p-2 text-primary shadow-card">
+                  <Icon className="size-6" />
                 </CardAction>
               </CardHeader>
               <CardContent>
                 {isStatsLoading ? (
                   <Skeleton className="h-10 w-24" />
                 ) : (
-                  <p className="font-display text-3xl font-semibold tracking-normal">
+                  <p className="metric-value text-3xl font-semibold">
                     {value.toLocaleString("es-PA")}
                   </p>
                 )}
@@ -176,7 +173,7 @@ export default function DashboardPage() {
         })}
       </div>
 
-      <Card className="border-[var(--surface-border)] bg-[var(--surface-card)]">
+      <Card className="section-container shadow-card">
         <CardHeader>
           <CardTitle className="font-display text-lg">Actividad reciente</CardTitle>
           <CardDescription>Ultimos usuarios registrados.</CardDescription>
@@ -195,11 +192,11 @@ export default function DashboardPage() {
             : recentUsers.map((user) => (
                 <div
                   key={user.id}
-                  className="flex items-center justify-between gap-4 rounded-xl border border-[var(--surface-border)] bg-[var(--surface-elevated)] p-3"
+                  className="flex items-center justify-between gap-4 rounded-xl border border-border bg-muted/50 p-3 transition-colors duration-150 hover:bg-muted"
                 >
                   <div className="flex min-w-0 items-center gap-3">
-                    <Avatar className="size-10 border border-[var(--surface-border)]">
-                      <AvatarFallback className="bg-[var(--brand)] font-display text-[#08110d]">
+                    <Avatar className="size-10 border border-border">
+                      <AvatarFallback className="bg-primary/20 font-display text-primary">
                         {getInitials(user.name)}
                       </AvatarFallback>
                     </Avatar>

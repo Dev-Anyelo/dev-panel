@@ -90,17 +90,22 @@ function UserMenu({ compact = false }: { compact?: boolean }) {
         <Button
           variant="ghost"
           className={cn(
-            "h-11 justify-start gap-3 rounded-xl px-2 transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-[var(--brand)]",
+            "h-11 justify-start gap-3 rounded-xl px-2 text-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
             compact ? "w-full" : "w-auto",
           )}
           title="Abrir menu de usuario"
         >
-          <Avatar className="size-9 border border-[var(--surface-border)]">
-            <AvatarFallback className="bg-[var(--brand)] font-display text-sm font-semibold text-[#08110d]">
+          <Avatar className="size-9 border border-border">
+            <AvatarFallback className="bg-primary/20 font-display text-sm font-semibold text-primary">
               {getInitials(user.name)}
             </AvatarFallback>
           </Avatar>
-          <span className={cn("min-w-0 flex-col text-left", compact ? "flex" : "hidden sm:flex")}>
+          <span
+            className={cn(
+              "min-w-0 flex-col text-left",
+              compact ? "flex" : "hidden sm:flex",
+            )}
+          >
             <span className="truncate text-sm font-medium">{user.name}</span>
             <span className="truncate text-xs text-muted-foreground">
               {user.email}
@@ -133,21 +138,21 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
 
   return (
-    <div className="flex h-full flex-col bg-[var(--surface-card)] text-foreground">
+    <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
       <div className="flex h-16 items-center gap-3 px-5">
-        <div className="flex size-10 items-center justify-center rounded-xl bg-[var(--brand)] text-[#08110d]">
-          <Shield />
+        <div className="flex size-10 items-center justify-center rounded-xl bg-primary/15 text-primary shadow-card">
+          <Shield className="size-5" />
         </div>
         <Link
           href="/dashboard"
           onClick={onNavigate}
-          className="font-display text-lg font-bold tracking-normal text-[var(--brand-light)]"
+          className="font-display text-lg font-bold tracking-tight text-foreground"
         >
           DevPanel
         </Link>
       </div>
 
-      <Separator className="bg-[var(--surface-border)]" />
+      <Separator className="bg-sidebar-border" />
 
       <nav className="flex flex-1 flex-col gap-2 p-4">
         {navItems.map((item) => {
@@ -163,9 +168,9 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
               asChild
               variant="ghost"
               className={cn(
-                "h-10 justify-start gap-3 rounded-xl px-3 text-muted-foreground transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-[var(--brand)]",
+                "h-11 justify-start gap-3 rounded-xl border-l-2 border-transparent px-3 text-sidebar-foreground/80 transition-colors duration-150 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                 isActive &&
-                  "bg-[color-mix(in_srgb,var(--brand)_14%,transparent)] text-[var(--brand-light)] hover:text-[var(--brand-light)]",
+                  "border-l-primary bg-primary/10 text-primary hover:bg-primary/10 hover:text-primary",
               )}
             >
               <Link href={item.href} onClick={onNavigate}>
@@ -177,16 +182,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         })}
       </nav>
 
-      <div className="p-4">
-        <div className="mb-3 rounded-xl border border-[var(--surface-border)] bg-[var(--surface-elevated)] p-3">
-          <div className="flex items-center gap-2 text-sm">
-            <BarChart3 className="text-[var(--brand)]" />
-            <span className="font-medium">Panel operativo</span>
-          </div>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Usuarios, actividad y metricas clave.
-          </p>
-        </div>
+      <div className="border-t border-sidebar-border p-4">
         <UserMenu compact />
       </div>
     </div>
@@ -195,8 +191,8 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
 function ShellLoading() {
   return (
-    <div className="flex min-h-screen bg-[var(--surface-base)]">
-      <aside className="hidden w-72 border-r border-[var(--surface-border)] bg-[var(--surface-card)] p-4 lg:block">
+    <div className="flex min-h-screen bg-background">
+      <aside className="hidden w-72 border-r border-sidebar-border bg-sidebar p-4 lg:block">
         <Skeleton className="h-10 w-36" />
         <div className="mt-8 flex flex-col gap-3">
           <Skeleton className="h-10 w-full" />
@@ -204,7 +200,7 @@ function ShellLoading() {
         </div>
       </aside>
       <main className="flex min-h-screen flex-1 flex-col">
-        <header className="flex h-16 items-center justify-between border-b border-[var(--surface-border)] bg-[var(--surface-card)] px-4 lg:px-6">
+        <header className="flex h-16 items-center justify-between border-b border-border bg-card px-4 lg:px-6">
           <Skeleton className="h-8 w-36" />
           <Skeleton className="size-9 rounded-full" />
         </header>
@@ -232,13 +228,13 @@ export function ProtectedShell({ children }: ProtectedShellProps) {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--surface-base)] text-foreground">
-      <aside className="fixed inset-y-0 left-0 z-20 hidden w-72 border-r border-[var(--surface-border)] bg-[var(--surface-card)] lg:block">
+    <div className="min-h-screen bg-background text-foreground">
+      <aside className="fixed inset-y-0 left-0 z-20 hidden w-72 border-r border-sidebar-border bg-sidebar lg:block">
         <SidebarContent />
       </aside>
 
       <div className="flex min-h-screen flex-col lg:pl-72">
-        <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-[var(--surface-border)] bg-[var(--surface-card)] px-4 lg:px-6">
+        <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-border bg-card px-4 lg:px-6">
           <div className="flex min-w-0 items-center gap-3">
             <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
               <SheetTrigger asChild>
@@ -254,7 +250,7 @@ export function ProtectedShell({ children }: ProtectedShellProps) {
               </SheetTrigger>
               <SheetContent
                 side="left"
-                className="w-80 border-[var(--surface-border)] bg-[var(--surface-card)] p-0"
+                className="w-80 border-sidebar-border bg-sidebar p-0"
               >
                 <SheetHeader className="sr-only">
                   <SheetTitle>Navegacion de DevPanel</SheetTitle>
