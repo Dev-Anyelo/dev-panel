@@ -35,6 +35,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const handleUnauthorized = useCallback(() => {
     setUser(null);
+    toast.error("Tu sesion expiro. Inicia sesion de nuevo");
 
     if (pathname !== "/login") {
       router.replace("/login");
@@ -70,7 +71,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setUser(data.user);
       } catch {
         if (isMounted) {
-          toast.error("No se pudo conectar con el servidor.");
+          toast.error("Error de conexion. Intenta de nuevo");
           setUser(null);
         }
       } finally {
@@ -96,6 +97,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         },
         body: JSON.stringify(credentials),
         credentials: "include",
+      }).catch(() => {
+        throw new Error("Error de conexion. Intenta de nuevo");
       });
 
       if (!response.ok) {
@@ -107,7 +110,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       const data = (await response.json()) as { user: AuthUser };
       setUser(data.user);
-      toast.success("Sesion iniciada.");
+      toast.success(`Bienvenido, ${data.user.name}`);
       router.replace("/dashboard");
     },
     [router],
@@ -120,7 +123,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }).catch(() => null);
 
     setUser(null);
-    toast.success("Sesion cerrada.");
+    toast.info("Sesion cerrada");
     router.replace("/login");
   }, [router]);
 

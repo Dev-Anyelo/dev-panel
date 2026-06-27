@@ -5,23 +5,21 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  PanelLeft,
   Shield,
   Users,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage,
+} from "@/components/ui/breadcrumb";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -69,55 +67,150 @@ function getInitials(name: string): string {
     .join("");
 }
 
-function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
+function useSectionTitle(pathname: string): string {
+  return useMemo(() => {
+    if (pathname.startsWith("/dashboard/users")) {
+      return "Usuarios";
+    }
+
+    return "Dashboard";
+  }, [pathname]);
+}
+
+function UserMenu({ compact = false }: { compact?: boolean }) {
+  const { user, logout } = useAuth();
+
+  if (!user) {
+    return null;
+  }
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          className={cn(
+            "h-11 justify-start gap-3 rounded-xl px-2 transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-[var(--brand)]",
+            compact ? "w-full" : "w-auto",
+          )}
+          title="Abrir menu de usuario"
+        >
+          <Avatar className="size-9 border border-[var(--surface-border)]">
+            <AvatarFallback className="bg-[var(--brand)] font-display text-sm font-semibold text-[#08110d]">
+              {getInitials(user.name)}
+            </AvatarFallback>
+          </Avatar>
+          <span className={cn("min-w-0 flex-col text-left", compact ? "flex" : "hidden sm:flex")}>
+            <span className="truncate text-sm font-medium">{user.name}</span>
+            <span className="truncate text-xs text-muted-foreground">
+              {user.email}
+            </span>
+          </span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-64">
+        <DropdownMenuLabel>
+          <div className="flex flex-col gap-1">
+            <span className="truncate">{user.name}</span>
+            <span className="truncate text-xs font-normal text-muted-foreground">
+              {user.email}
+            </span>
+          </div>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          <DropdownMenuItem onSelect={() => void logout()}>
+            <LogOut />
+            Cerrar sesion
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
 
   return (
-    <nav className="flex flex-col gap-1">
-      {navItems.map((item) => {
-        const Icon = item.icon;
-        const isActive =
-          item.href === "/dashboard"
-            ? pathname === item.href
-            : pathname.startsWith(item.href);
+    <div className="flex h-full flex-col bg-[var(--surface-card)] text-foreground">
+      <div className="flex h-16 items-center gap-3 px-5">
+        <div className="flex size-10 items-center justify-center rounded-xl bg-[var(--brand)] text-[#08110d]">
+          <Shield />
+        </div>
+        <Link
+          href="/dashboard"
+          onClick={onNavigate}
+          className="font-display text-lg font-bold tracking-normal text-[var(--brand-light)]"
+        >
+          DevPanel
+        </Link>
+      </div>
 
-        return (
-          <Button
-            key={item.href}
-            asChild
-            variant={isActive ? "secondary" : "ghost"}
-            className="justify-start"
-            onClick={onNavigate}
-          >
-            <Link href={item.href}>
-              <Icon data-icon="inline-start" />
-              {item.label}
-            </Link>
-          </Button>
-        );
-      })}
-    </nav>
+      <Separator className="bg-[var(--surface-border)]" />
+
+      <nav className="flex flex-1 flex-col gap-2 p-4">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const isActive =
+            item.href === "/dashboard"
+              ? pathname === item.href
+              : pathname.startsWith(item.href);
+
+          return (
+            <Button
+              key={item.href}
+              asChild
+              variant="ghost"
+              className={cn(
+                "h-10 justify-start gap-3 rounded-xl px-3 text-muted-foreground transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-[var(--brand)]",
+                isActive &&
+                  "bg-[color-mix(in_srgb,var(--brand)_14%,transparent)] text-[var(--brand-light)] hover:text-[var(--brand-light)]",
+              )}
+            >
+              <Link href={item.href} onClick={onNavigate}>
+                <Icon data-icon="inline-start" />
+                {item.label}
+              </Link>
+            </Button>
+          );
+        })}
+      </nav>
+
+      <div className="p-4">
+        <div className="mb-3 rounded-xl border border-[var(--surface-border)] bg-[var(--surface-elevated)] p-3">
+          <div className="flex items-center gap-2 text-sm">
+            <BarChart3 className="text-[var(--brand)]" />
+            <span className="font-medium">Panel operativo</span>
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Usuarios, actividad y metricas clave.
+          </p>
+        </div>
+        <UserMenu compact />
+      </div>
+    </div>
   );
 }
 
 function ShellLoading() {
   return (
-    <div className="flex min-h-screen bg-background">
-      <aside className="hidden w-64 border-r bg-card/60 p-4 lg:block">
-        <Skeleton className="h-8 w-32" />
+    <div className="flex min-h-screen bg-[var(--surface-base)]">
+      <aside className="hidden w-72 border-r border-[var(--surface-border)] bg-[var(--surface-card)] p-4 lg:block">
+        <Skeleton className="h-10 w-36" />
         <div className="mt-8 flex flex-col gap-3">
-          <Skeleton className="h-8 w-full" />
-          <Skeleton className="h-8 w-full" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
         </div>
       </aside>
       <main className="flex min-h-screen flex-1 flex-col">
-        <header className="flex h-16 items-center justify-between border-b px-4 lg:px-6">
+        <header className="flex h-16 items-center justify-between border-b border-[var(--surface-border)] bg-[var(--surface-card)] px-4 lg:px-6">
           <Skeleton className="h-8 w-36" />
           <Skeleton className="size-9 rounded-full" />
         </header>
-        <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">
-          <Skeleton className="h-24 w-full" />
-          <Skeleton className="h-64 w-full" />
+        <div className="flex flex-1 flex-col gap-6 p-4 lg:p-6">
+          <Skeleton className="h-28 w-full" />
+          <Skeleton className="h-72 w-full" />
         </div>
       </main>
     </div>
@@ -125,9 +218,10 @@ function ShellLoading() {
 }
 
 export function ProtectedShell({ children }: ProtectedShellProps) {
-  const { user, isLoading, logout } = useAuth();
+  const { user, isLoading } = useAuth();
+  const pathname = usePathname();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
+  const title = useSectionTitle(pathname);
 
   if (isLoading) {
     return <ShellLoading />;
@@ -138,133 +232,56 @@ export function ProtectedShell({ children }: ProtectedShellProps) {
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <aside className="hidden w-64 shrink-0 border-r bg-card/60 lg:block">
-        <div className="flex h-full flex-col p-4">
-          <Link href="/dashboard" className="flex items-center gap-2 px-2 py-1">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <Shield />
-            </span>
-            <span className="text-lg font-semibold">DevPanel</span>
-          </Link>
-          <Separator className="my-4" />
-          <SidebarNav />
-          <div className="mt-auto rounded-lg border bg-background/60 p-3">
-            <div className="flex items-center gap-2 text-sm">
-              <BarChart3 className="text-muted-foreground" />
-              <span className="font-medium">Admin activo</span>
-            </div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Gestion operativa de usuarios.
-            </p>
-          </div>
-        </div>
+    <div className="min-h-screen bg-[var(--surface-base)] text-foreground">
+      <aside className="fixed inset-y-0 left-0 z-20 hidden w-72 border-r border-[var(--surface-border)] bg-[var(--surface-card)] lg:block">
+        <SidebarContent />
       </aside>
 
-      <main className="flex min-h-screen flex-1 flex-col">
-        <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-background/95 px-4 backdrop-blur lg:px-6">
-          <div className="flex items-center gap-2">
+      <div className="flex min-h-screen flex-col lg:pl-72">
+        <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-[var(--surface-border)] bg-[var(--surface-card)] px-4 lg:px-6">
+          <div className="flex min-w-0 items-center gap-3">
             <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
               <SheetTrigger asChild>
-                <Button variant="outline" size="icon" className="lg:hidden">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="lg:hidden"
+                  title="Abrir navegacion"
+                >
                   <Menu />
-                  <span className="sr-only">Abrir menu</span>
+                  <span className="sr-only">Abrir navegacion</span>
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-72">
-                <SheetHeader>
-                  <SheetTitle className="flex items-center gap-2">
-                    <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                      <Shield />
-                    </span>
-                    DevPanel
-                  </SheetTitle>
+              <SheetContent
+                side="left"
+                className="w-80 border-[var(--surface-border)] bg-[var(--surface-card)] p-0"
+              >
+                <SheetHeader className="sr-only">
+                  <SheetTitle>Navegacion de DevPanel</SheetTitle>
                 </SheetHeader>
-                <div className="mt-6">
-                  <SidebarNav onNavigate={() => setIsSheetOpen(false)} />
-                </div>
+                <SidebarContent onNavigate={() => setIsSheetOpen(false)} />
               </SheetContent>
             </Sheet>
-            <div>
-              <p className="text-sm text-muted-foreground">Panel</p>
-              <h1 className="text-base font-semibold leading-none lg:text-lg">
-                Administracion
-              </h1>
-            </div>
+
+            <PanelLeft className="hidden text-muted-foreground lg:block" />
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem>
+                  <BreadcrumbPage className="font-display text-base font-semibold">
+                    {title}
+                  </BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
           </div>
 
-          <Dialog
-            open={isLogoutDialogOpen}
-            onOpenChange={setIsLogoutDialogOpen}
-          >
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-10 gap-2 px-2">
-                  <Avatar className="size-8">
-                    <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
-                  </Avatar>
-                  <span className="hidden max-w-40 truncate text-sm md:inline">
-                    {user.name}
-                  </span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>
-                  <div className="flex flex-col gap-1">
-                    <span className="truncate">{user.name}</span>
-                    <span className="truncate text-xs font-normal text-muted-foreground">
-                      {user.email}
-                    </span>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuGroup>
-                  <DropdownMenuItem
-                    onSelect={(event) => {
-                      event.preventDefault();
-                      setIsLogoutDialogOpen(true);
-                    }}
-                  >
-                    <LogOut />
-                    Cerrar sesion
-                  </DropdownMenuItem>
-                </DropdownMenuGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Cerrar sesion</DialogTitle>
-                <DialogDescription>
-                  Tu sesion actual se cerrara en este navegador.
-                </DialogDescription>
-              </DialogHeader>
-              <DialogFooter>
-                <DialogClose asChild>
-                  <Button variant="outline">Cancelar</Button>
-                </DialogClose>
-                <Button
-                  variant="destructive"
-                  onClick={() => {
-                    setIsLogoutDialogOpen(false);
-                    void logout();
-                  }}
-                >
-                  <LogOut data-icon="inline-start" />
-                  Cerrar sesion
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <UserMenu />
         </header>
 
-        <div
-          className={cn(
-            "mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 p-4 lg:p-6",
-          )}
-        >
+        <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 p-4 sm:p-6">
           {children}
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }
